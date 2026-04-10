@@ -1,0 +1,75 @@
+honeypot:
+  # --- Service Ports ---
+  ssh:
+    enabled: true
+    port: 2222
+    banner: "SSH-2.0-OpenSSH_7.4"
+    # Credentials that trigger a "successful" login and open a fake shell
+    trap_credentials:
+      - username: "admin"
+        password: "admin"
+      - username: "root"
+        password: "root"
+      - username: "root"
+        password: "1234"
+      - username: "admin"
+        password: "password"
+      - username: "pi"
+        password: "raspberry"
+    # Tarpit: add artificial delay (seconds) on auth failure to waste attacker time
+    auth_fail_delay: 2.0
+    # Max commands to log per session before disconnecting
+    max_session_commands: 30
+    session_timeout: 120  # seconds
+
+  http:
+    enabled: true
+    port: 8080
+    # What the server pretends to be
+    server_header: "Apache/2.4.41 (Ubuntu)"
+    x_powered_by: "PHP/7.4.3"
+    # Fake admin panel persona: "router", "wordpress", "nas", "generic"
+    persona: "router"
+
+  telnet:
+    enabled: true
+    port: 2323
+    auth_fail_delay: 1.5
+    trap_credentials:
+      - username: "admin"
+        password: "admin"
+      - username: "root"
+        password: ""
+      - username: "root"
+        password: "root"
+      - username: "user"
+        password: "user"
+
+  dashboard:
+    enabled: true
+    port: 5000
+    # Bind to localhost only (not exposed to internet directly)
+    host: "0.0.0.0"
+
+  # --- Geolocation ---
+  geo:
+    enabled: true
+    # ip-api.com free tier: 45 requests/minute
+    cache_ttl_hours: 24
+    rate_limit_per_minute: 40  # stay under free tier limit
+
+  # --- Logging ---
+  logging:
+    level: "INFO"
+    file: "logs/honeypot.log"
+    max_bytes: 10485760  # 10 MB
+    backup_count: 5
+
+  # --- Rate Limiting (anti log-flood) ---
+  rate_limit:
+    # Max events to log per IP per minute; excess are silently dropped
+    max_events_per_ip_per_minute: 30
+
+  # --- Database ---
+  database:
+    path: "data/honeypot.db"

@@ -1,0 +1,35 @@
+# Environment
+.env
+
+# Database (captured data — don't commit attacker data to public repos)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# SSH host key (regenerated on first run)
+data/host_key
+data/host_key.pub
+
+# Logs
+logs/*.log
+logs/*.log.*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Docker
+.docker/

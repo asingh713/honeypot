@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  honeypot:
+    build:
+      context: .
+      dockerfile: Dockerfile.services
+    container_name: honeypot
+    restart: unless-stopped
+    ports:
+      - "${HONEYPOT_SSH_PORT:-2222}:2222"
+      - "${HONEYPOT_TELNET_PORT:-2323}:2323"
+      - "${HONEYPOT_HTTP_PORT:-8080}:8080"
+      - "${HONEYPOT_DASHBOARD_PORT:-5000}:5000"
+    volumes:
+      - honeypot-data:/app/data
+      - honeypot-logs:/app/logs
+    environment:
+      - HONEYPOT_CONFIG_PATH=config.yaml
+    # Limit resources — a honeypot should never starve the host
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "256M"
+
+volumes:
+  honeypot-data:
+  honeypot-logs:

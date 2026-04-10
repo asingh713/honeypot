@@ -1,0 +1,19 @@
+BusyBox v1.26.2 built-in shell (ash)
+Enter 'help' for a list of built-in commands.
+
+---
+
+MikroTik RouterOS 6.49.6 (c) 1999-2022       https://www.mikrotik.com/
+
+---
+
+Cisco IOS Software, Version 15.7(3)M
+Copyright (c) 1986-2019 by Cisco Systems, Inc.
+
+---
+
+Welcome to DD-WRT v3.0-r48199
+
+---
+
+(none) login:

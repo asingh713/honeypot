@@ -1,0 +1,20 @@
+FROM python:3.12-slim
+
+# Non-root user — security best practice
+RUN groupadd -r honeypot && useradd -r -g honeypot -u 1000 honeypot
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+RUN mkdir -p data logs && chown -R honeypot:honeypot /app
+
+USER honeypot
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD python -c "import socket; s=socket.socket(); s.connect(('127.0.0.1', 2222)); s.close()" || exit 1
+
+CMD ["python", "main.py"]

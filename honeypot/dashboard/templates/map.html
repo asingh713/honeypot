@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Attack Map — Honeypot Dashboard{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  #map { height: calc(100vh - 140px); border-radius: 6px; border: 1px solid var(--border); }
+  .leaflet-container { background: #0d1117; }
+  .attack-popup { font-family: monospace; font-size: 12px; color: #333; }
+  .attack-popup strong { color: #c00; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:12px">
+  <h1>Attack Map</h1>
+  <p>Geographic distribution of attack origins (based on IP geolocation).</p>
+</div>
+<div id="map"></div>
+
+<script>
+  const map = L.map('map', {
+    center: [20, 0],
+    zoom: 2,
+    zoomControl: true,
+  });
+
+  // Dark tile layer
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(map);
+
+  async function loadPoints() {
+    const res = await fetch('/api/geo-points');
+    const geojson = await res.json();
+
+    L.geoJSON(geojson, {
+      pointToLayer: (feature, latlng) => {
+        const count = feature.properties.attack_count || 1;
+        const radius = Math.min(4 + Math.log2(count) * 2, 20);
+        return L.circleMarker(latlng, {
+          radius: radius,
+          fillColor: '#f85149',
+          color: '#ff6b6b',
+          weight: 1,
+          opacity: 0.9,
+          fillOpacity: 0.6,
+        });
+      },
+      onEachFeature: (feature, layer) => {
+        const p = feature.properties;
+        layer.bindPopup(`
+          <div class="attack-popup">
+            <strong>${p.ip}</strong><br>
+            ${p.city || '?'}, ${p.country || '?'}<br>
+            ISP: ${p.isp || 'Unknown'}<br>
+            Events: <strong>${p.attack_count}</strong>
+          </div>
+        `);
+      },
+    }).addTo(map);
+  }
+
+  loadPoints();
+</script>
+{% endblock %}

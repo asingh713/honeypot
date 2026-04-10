@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Events — Honeypot Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Events</h1>
+  <p>All captured connection attempts. Filter by service, IP, or date.</p>
+</div>
+
+<!-- Filters -->
+<div class="card" style="margin-bottom:16px; padding:16px">
+  <form method="GET" action="/events" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end">
+    <div>
+      <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:4px">Service</label>
+      <select name="service" style="background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:4px; padding:6px 10px">
+        <option value="">All</option>
+        {% for s in ['ssh','http','telnet'] %}
+        <option value="{{ s }}" {% if service == s %}selected{% endif %}>{{ s | upper }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:4px">Source IP</label>
+      <input name="ip" value="{{ ip or '' }}" placeholder="e.g. 1.2.3.4"
+             style="background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:4px; padding:6px 10px; width:160px">
+    </div>
+    <div>
+      <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:4px">Since (UTC)</label>
+      <input type="date" name="since" value="{{ since or '' }}"
+             style="background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:4px; padding:6px 10px">
+    </div>
+    <button type="submit"
+            style="background:var(--blue); color:#000; border:none; border-radius:4px; padding:7px 16px; cursor:pointer; font-weight:600">
+      Filter
+    </button>
+    <a href="/events" style="padding:7px 12px; color:var(--muted); font-size:13px; align-self:center">Reset</a>
+  </form>
+</div>
+
+<div class="card">
+  {% if events %}
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp (UTC)</th>
+        <th>Service</th>
+        <th>Source IP</th>
+        <th>Port</th>
+        <th>Username</th>
+        <th>Password</th>
+        <th>Command / Path</th>
+        <th>Session</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in events %}
+      <tr>
+        <td style="color:var(--muted); white-space:nowrap">{{ e.timestamp[:19].replace('T', ' ') }}</td>
+        <td><span class="badge badge-{{ e.service }}">{{ e.service }}</span></td>
+        <td><a href="/events?ip={{ e.src_ip }}">{{ e.src_ip }}</a></td>
+        <td style="color:var(--muted)">{{ e.src_port or '-' }}</td>
+        <td>{{ e.username or '-' }}</td>
+        <td>{{ e.password or '-' }}</td>
+        <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
+          {{ e.command or e.http_path or '-' }}
+        </td>
+        <td style="color:var(--muted); font-size:11px">
+          {% if e.session_id %}{{ e.session_id[:8] }}…{% else %}-{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  <div class="pagination" style="margin-top:16px">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}&service={{ service or '' }}&ip={{ ip or '' }}&since={{ since or '' }}">← Prev</a>
+    {% endif %}
+    <span class="current">Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}
+    <a href="?page={{ page + 1 }}&service={{ service or '' }}&ip={{ ip or '' }}&since={{ since or '' }}">Next →</a>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <p style="color:var(--muted); padding:12px 0">No events match your filters.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Overview — Honeypot Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Overview</h1>
+  <p>Real-time threat intelligence collected by the honeypot.</p>
+</div>
+
+<!-- Stat cards -->
+<div class="grid-4">
+  <div class="card">
+    <h3>Total Events</h3>
+    <div class="value" style="color:var(--red)">{{ stats.total | default(0) }}</div>
+  </div>
+  <div class="card">
+    <h3>Today</h3>
+    <div class="value" style="color:var(--orange)">{{ stats.today | default(0) }}</div>
+  </div>
+  <div class="card">
+    <h3>Last 7 Days</h3>
+    <div class="value" style="color:var(--yellow)">{{ stats.last_7_days | default(0) }}</div>
+  </div>
+  <div class="card">
+    <h3>Unique IPs</h3>
+    <div class="value" style="color:var(--blue)">{{ stats.unique_ips | default(0) }}</div>
+  </div>
+</div>
+
+<!-- Service breakdown -->
+<div class="grid-4" style="margin-bottom:24px">
+  {% for svc in ['ssh', 'http', 'telnet'] %}
+  <div class="card" style="padding:16px">
+    <h3>{{ svc | upper }}</h3>
+    <div style="font-size:24px; font-weight:700">{{ stats.by_service.get(svc, 0) }}</div>
+  </div>
+  {% endfor %}
+  <div class="card" style="padding:16px; display:flex; align-items:center; justify-content:center;">
+    <a href="/map" style="font-size:13px">View attack map →</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Top source IPs -->
+  <div class="card">
+    <div class="section-header">Top Source IPs</div>
+    {% if stats.top_ips %}
+    <ul class="top-list">
+      {% for item in stats.top_ips %}
+      <li>
+        <a href="/events?ip={{ item.ip }}">{{ item.ip }}</a>
+        <span class="count">{{ item.count }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p style="color:var(--muted)">No data yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Top usernames -->
+  <div class="card">
+    <div class="section-header">Top Usernames Tried</div>
+    {% if stats.top_usernames %}
+    <ul class="top-list">
+      {% for item in stats.top_usernames %}
+      <li>
+        <span>{{ item.username }}</span>
+        <span class="count">{{ item.count }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p style="color:var(--muted)">No data yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Top passwords -->
+  <div class="card">
+    <div class="section-header">Top Passwords Tried</div>
+    {% if stats.top_passwords %}
+    <ul class="top-list">
+      {% for item in stats.top_passwords %}
+      <li>
+        <span style="font-family:monospace">{{ item.password or "(empty)" }}</span>
+        <span class="count">{{ item.count }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p style="color:var(--muted)">No data yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Recent events -->
+  <div class="card">
+    <div class="section-header">Recent Events <a href="/events" style="font-size:12px; font-weight:400; float:right">View all →</a></div>
+    <table>
+      <thead>
+        <tr><th>Time</th><th>Service</th><th>IP</th><th>User</th></tr>
+      </thead>
+      <tbody id="recent-events">
+        <tr><td colspan="4" style="color:var(--muted)">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  async function loadRecent() {
+    const res = await fetch('/api/events?page=1');
+    const rows = await res.json();
+    const tbody = document.getElementById('recent-events');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">No events yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.slice(0, 10).map(r => `
+      <tr>
+        <td style="color:var(--muted)">${r.timestamp.slice(0,19).replace('T',' ')}</td>
+        <td><span class="badge badge-${r.service}">${r.service}</span></td>
+        <td><a href="/events?ip=${r.src_ip}">${r.src_ip}</a></td>
+        <td>${r.username || '-'}</td>
+      </tr>
+    `).join('');
+  }
+  loadRecent();
+  setInterval(loadRecent, 10000);
+</script>
+{% endblock %}
